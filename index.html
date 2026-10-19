@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>AKT Clan Bug Web · Zeus Edition</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;600;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#070b14;
+    --bg-2:#0b1222;
+    --ink:#eaf1ff;
+    --dim:#8ea0c2;
+    --gold:#f5c451;
+    --gold-deep:#d4a027;
+    --cyan:#4dd6ff;
+    --mag:#ff5fa2;
+    --green:#3ee88f;
+    --danger:#ff6b6b;
+    --line:rgba(150,180,255,.14);
+    --card:linear-gradient(160deg, rgba(20,28,52,.9), rgba(10,14,26,.9));
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:"Space Grotesk", system-ui, sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(1200px 700px at 15% -10%, rgba(245,196,81,.12), transparent 60%),
+      radial-gradient(900px 600px at 110% 10%, rgba(77,214,255,.10), transparent 55%),
+      radial-gradient(800px 800px at 50% 120%, rgba(255,95,162,.08), transparent 60%),
+      linear-gradient(180deg,#070b14 0%, #05080f 100%);
+    min-height:100vh; overflow-x:hidden;
+  }
+  body::before{
+    content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background-image:
+      linear-gradient(rgba(150,180,255,.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(150,180,255,.04) 1px, transparent 1px);
+    background-size:44px 44px;
+    mask-image:radial-gradient(ellipse at center, black 55%, transparent 100%);
+  }
+
+  /* ---------- Layout ---------- */
+  .stage{position:relative;z-index:2;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px 18px}
+  .screen{display:none;width:100%;max-width:520px;animation:rise .55s cubic-bezier(.2,.8,.2,1)}
+  .screen.active{display:block}
+  @keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  @keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}
+  @keyframes shimmer{to{background-position:200% 0}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes ring{0%{transform:scale(.8);opacity:.9}100%{transform:scale(2.4);opacity:0}}
+
+  /* ---------- Shared UI ---------- */
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:22px;
+    padding:26px 22px;
+    box-shadow:0 30px 80px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.04);
+    backdrop-filter:blur(10px);
+    position:relative;
+    overflow:hidden;
+  }
+  .card::after{content:"";position:absolute;inset:0;border-radius:22px;pointer-events:none;background:conic-gradient(from 180deg, transparent, rgba(245,196,81,.08), transparent 30%)}
+  .eyebrow{font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--gold);font-weight:600}
+  h1.display{font-family:"Bebas Neue",sans-serif;font-size:64px;line-height:.92;letter-spacing:.01em}
+  h1.display .accent{color:var(--gold)}
+  .lead{color:var(--dim);font-size:14.5px;line-height:1.6;margin-top:10px}
+  .pill{display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border:1px solid var(--line);border-radius:999px;font-size:12px;color:var(--dim);background:rgba(255,255,255,.02)}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 12px var(--green);animation:pulse 1.6s infinite}
+
+  .btn{
+    width:100%;border:none;cursor:pointer;font-family:inherit;font-weight:600;font-size:15px;
+    padding:15px 18px;border-radius:14px;color:#0b1020;letter-spacing:.01em;
+    background:linear-gradient(135deg,#ffe49a 0%, #f5c451 40%, #d4a027 100%);
+    background-size:200% 100%;
+    box-shadow:0 12px 30px rgba(245,196,81,.28);
+    transition:transform .18s ease, box-shadow .25s ease, background-position .4s ease;
+    display:flex;align-items:center;justify-content:center;gap:10px;position:relative;
+  }
+  .btn:hover{transform:translateY(-2px);box-shadow:0 18px 44px rgba(245,196,81,.42);background-position:100% 0}
+  .btn:active{transform:translateY(0)}
+  .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);box-shadow:none}
+  .btn.ghost:hover{border-color:rgba(245,196,81,.5);box-shadow:none;transform:translateY(-1px)}
+  .btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
+
+  .field{margin-top:16px}
+  .field label{display:block;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;font-weight:600}
+  .input-wrap{position:relative;display:flex;align-items:center}
+  input,select{
+    width:100%;background:rgba(6,10,20,.7);border:1px solid var(--line);color:var(--ink);
+    font-family:"JetBrains Mono",monospace;font-size:15px;padding:15px 16px;border-radius:13px;outline:none;
+    transition:border-color .2s, box-shadow .2s;appearance:none;
+  }
+  select{font-family:"Space Grotesk",sans-serif;padding-right:44px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238ea0c2' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center}
+  input:focus,select:focus{border-color:var(--gold);box-shadow:0 0 0 4px rgba(245,196,81,.12)}
+  .pin-input{letter-spacing:.5em;text-align:center;font-size:22px;font-weight:700;text-transform:uppercase;padding:18px}
+  .tel{display:flex;gap:10px}
+  .tel .cc{flex:0 0 130px}
+  .tel .num{flex:1}
+
+  .row{display:flex;gap:10px;margin-top:16px}
+  .row .btn{padding:13px}
+  .wa-me{display:inline-flex;align-items:center;gap:8px;color:var(--green);text-decoration:none;font-size:13px;font-weight:600}
+  .wa-me:hover{text-decoration:underline}
+  .muted{color:var(--dim);font-size:13px;line-height:1.5}
+  .err{color:var(--danger);font-size:13px;margin-top:10px;min-height:16px;font-weight:500}
+
+  /* ---------- Top bar ---------- */
+  .topbar{display:flex;align-items:center;justify-content:space-between;max-width:520px;margin:0 auto 16px;width:100%}
+  .brand{display:flex;align-items:center;gap:10px;font-family:"Bebas Neue";font-size:22px;letter-spacing:.04em}
+  .brand .logo{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(135deg,var(--gold),var(--gold-deep));color:#0b1020;font-family:"JetBrains Mono";font-weight:800;font-size:15px;box-shadow:0 8px 24px rgba(245,196,81,.35)}
+  .stepper{display:flex;gap:6px}
+  .step{width:26px;height:4px;border-radius:2px;background:rgba(150,180,255,.15);transition:.3s}
+  .step.on{background:linear-gradient(90deg,var(--gold),var(--cyan))}
+
+  /* ---------- Hero ---------- */
+  .badge-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+  .hero-img{
+    width:100%;aspect-ratio:16/10;border-radius:16px;object-fit:cover;margin-bottom:20px;
+    border:1px solid var(--line);box-shadow:0 20px 50px rgba(0,0,0,.5);
+    filter:saturate(1.1) contrast(1.05);
+  }
+  .about{margin-top:20px}
+  .about h3{font-family:"Bebas Neue";font-size:28px;letter-spacing:.02em;margin-bottom:8px}
+  .about p{color:var(--dim);font-size:14px;line-height:1.65}
+  .feat{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+  .feat div{border:1px solid var(--line);border-radius:12px;padding:12px;font-size:12.5px;color:var(--ink);background:rgba(255,255,255,.02)}
+  .feat b{display:block;color:var(--gold);font-size:12px;letter-spacing:.1em;margin-bottom:4px;font-weight:600}
+
+  /* ---------- Pairing ---------- */
+  .qr-shell{width:220px;height:220px;margin:0 auto 6px;border-radius:18px;background:#fff;padding:14px;box-shadow:0 20px 60px rgba(77,214,255,.18);position:relative}
+  .qr-shell::before{content:"";position:absolute;inset:-3px;border-radius:20px;background:linear-gradient(135deg,var(--cyan),var(--gold));z-index:-1;filter:blur(14px);opacity:.5}
+  .loader{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;padding:30px 0;color:var(--dim);font-size:14px}
+  .spin{width:42px;height:42px;border-radius:50%;border:3px solid rgba(255,255,255,.12);border-top-color:var(--gold);animation:spin .9s linear infinite}
+  .scanring{position:relative;width:260px;height:260px;margin:6px auto}
+  .scanring span{position:absolute;left:50%;top:50%;width:220px;height:220px;border:2px solid var(--cyan);border-radius:50%;transform:translate(-50%,-50%);animation:ring 2s infinite}
+  .scanring span:nth-child(2){animation-delay:.6s}
+  .scanring .core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(77,214,255,.25),transparent 70%);display:grid;place-items:center;font-family:"Bebas Neue";font-size:34px;color:#fff}
+
+  /* ---------- Phone / code ---------- */
+  .big-code{
+    font-family:"JetBrains Mono",monospace;font-weight:800;font-size:52px;letter-spacing:.28em;
+    text-align:center;padding:24px 10px;margin:18px 0 8px;
+    background:linear-gradient(90deg,var(--gold),var(--cyan));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    user-select:all;word-break:break-all;line-height:1.1;
+  }
+  .code-label{text-align:center;color:var(--dim);font-size:12px;letter-spacing:.2em;text-transform:uppercase}
+  .hint{background:rgba(63,232,143,.08);border:1px solid rgba(63,232,143,.25);border-radius:12px;padding:12px 14px;font-size:13px;color:#c7f5dc;margin-top:14px;line-height:1.55}
+  .hint b{color:var(--green)}
+
+  /* ---------- Menu overlay ---------- */
+  .menu-backdrop{position:fixed;inset:0;z-index:50;display:none;align-items:flex-end;justify-content:center;background:rgba(4,7,14,.7);backdrop-filter:blur(6px)}
+  .menu-backdrop.open{display:flex;animation:fade .3s}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .menu-sheet{
+    width:100%;max-width:520px;max-height:88vh;overflow-y:auto;
+    background:linear-gradient(180deg,#0e1528,#070b14);
+    border:1px solid var(--line);border-bottom:none;border-radius:22px 22px 0 0;padding:14px 16px 22px;
+    animation:sheetup .4s cubic-bezier(.2,.8,.2,1);
+  }
+  @keyframes sheetup{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+  .menu-head{display:flex;align-items:center;justify-content:space-between;padding:6px 4px 12px;border-bottom:1px solid var(--line)}
+  .menu-head .t{font-family:"Bebas Neue";font-size:26px;letter-spacing:.03em;display:flex;align-items:center;gap:10px}
+  .grab{width:40px;height:4px;border-radius:2px;background:rgba(255,255,255,.18);margin:0 auto 10px}
+  .tab-row{display:flex;gap:8px;margin:12px 0}
+  .tab{flex:1;text-align:center;padding:10px;border-radius:11px;font-size:12.5px;font-weight:600;cursor:pointer;border:1px solid var(--line);color:var(--dim);transition:.2s}
+  .tab.active{color:#0b1020;background:linear-gradient(135deg,var(--gold),var(--gold-deep));border-color:transparent}
+  .cmd{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-radius:12px;margin-bottom:8px;background:rgba(255,255,255,.025);border:1px solid var(--line);font-size:14px}
+  .cmd:hover{border-color:rgba(245,196,81,.4);background:rgba(245,196,81,.06)}
+  .cmd .name{font-family:"JetBrains Mono",monospace;font-weight:600;color:var(--cyan)}
+  .cmd .desc{color:var(--dim);font-size:12px;margin-top:2px}
+  .cmd .tag{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);white-space:nowrap}
+
+  /* ---------- Toast ---------- */
+  .toast{position:fixed;top:18px;left:50%;transform:translateX(-50%) translateY(-70px);z-index:80;background:#0e1528;border:1px solid var(--line);border-left:3px solid var(--green);color:var(--ink);padding:12px 18px;border-radius:12px;font-size:13px;box-shadow:0 20px 40px rgba(0,0,0,.5);transition:transform .35s cubic-bezier(.2,.8,.2,1);max-width:92vw}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+
+  /* ---------- Footer ---------- */
+  footer{text-align:center;color:var(--dim);font-size:12px;margin-top:14px;letter-spacing:.05em}
+  footer a{color:var(--gold);text-decoration:none}
+
+  .icon{width:18px;height:18px;stroke-width:2}
+  .close-x{cursor:pointer;color:var(--dim);display:grid;place-items:center;width:32px;height:32px;border-radius:9px;border:1px solid var(--line);background:transparent}
+  .close-x:hover{color:var(--ink)}
+  @media(min-width:640px){h1.display{font-size:80px}}
+</style>
+</head>
+<body>
+
+<!-- ================= TOP BAR + STEPPER ================= -->
+<header class="topbar">
+  <div class="brand"><span class="logo">AKT</span><span>CLAN&nbsp;BUG</span></div>
+  <div class="stepper" id="stepper">
+    <div class="step on"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div>
+  </div>
+</header>
+
+<main class="stage">
+
+  <!-- ============ SCREEN 0 · HOME / ABOUT ============ -->
+  <section class="screen active" id="s-home">
+    <div class="card">
+      <img class="hero-img" id="heroImg" alt="AKT Clan Bug emblem"
+        onerror="this.style.background='linear-gradient(135deg,#f5c451,#ff5fa2 60%,#4dd6ff)';this.removeAttribute('src');this.setAttribute('data-fallback','1')" />
+      <div class="eyebrow">Personal Clan Bug Bot · Zeus Build</div>
+      <h1 class="display" style="margin-top:10px">AKT CLAN<br/><span class="accent">BUG WEB</span></h1>
+      <p class="lead">Deploy invisible crash &amp; glitch bugs across Android, iOS and WhatsApp groups. Owner-driven, pairing-based, one-code access. Built by <b style="color:var(--gold)">ZEUS</b>.</p>
+
+      <div class="badge-row">
+        <span class="pill"><span class="dot"></span> Online</span>
+        <span class="pill">Android</span>
+        <span class="pill">iOS</span>
+        <span class="pill">WhatsApp Group</span>
+      </div>
+
+      <div class="about">
+        <h3>About AKT Clan</h3>
+        <p>AKT Clan runs a private network of lightweight "bug" bots that attach to a WhatsApp target and fire crash / glitch payloads. Access is gated behind a one-time pairing code issued by the owner. The bot menu activates only after your number is paired — clean, silent and invisible to the victim.</p>
+        <div class="feat">
+          <div><b>ANDROID</b>Soft &amp; hard crash triggers</div>
+          <div><b>iOS</b>Freeze &amp; reboot payloads</div>
+          <div><b>GROUP</b>Batch blast every member</div>
+          <div><b>INVISIBLE</b>No log, no badge, no trace</div>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:22px">
+        <button class="btn" onclick="go('s-pair',1)">Enter Pairing Mode</button>
+      </div>
+      <a class="wa-me" style="display:flex;justify-content:center;margin-top:14px" target="_blank" rel="noopener" href="https://wa.me/2349066760078?text=Hello%20ZEUS%2C%20I%27m%20here%20for%20an%20AKT%20Clan%20bug%20pairing%20code">
+        <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2Z"/></svg>
+        DM owner · WhatsApp +234 906 676 0078
+      </a>
+      <footer>© 2026 AKT Clan · Owner <a href="#">ZEUS</a> · CLAN DEV</footer>
+    </div>
+  </section>
+
+  <!-- ============ SCREEN 1 · PAIRING MODE ============ -->
+  <section class="screen" id="s-pair">
+    <div class="card">
+      <div class="eyebrow">Step 1 · Pairing</div>
+      <h1 class="display" style="font-size:44px;margin-top:8px">Pair Your Device</h1>
+      <p class="lead">Scan the AKT link QR from the owner's bot, or type the pairing string you were given. This links your WhatsApp number to the AKT bot network.</p>
+
+      <div id="pairView">
+        <div style="height:20px"></div>
+        <div class="scanring">
+          <span></span><span></span>
+          <div class="core">PAIR</div>
+        </div>
+        <p class="code-label" style="margin:10px 0 4px">Waiting for secure channel…</p>
+        <p class="muted" style="text-align:center">Keep WhatsApp open on this device.</p>
+
+        <div class="field">
+          <label>Or paste pairing string / link</label>
+          <div class="input-wrap">
+            <input id="pairInput" type="text" placeholder="PASTE-PAIR-CODE…" autocomplete="off" spellcheck="false"/>
+          </div>
+        </div>
+        <div class="row">
+          <button class="btn" id="connectBtn" onclick="startPairing()">Connect</button>
+          <button class="btn ghost" onclick="simulatePair()">Scan QR</button>
+        </div>
+      </div>
+
+      <div id="pairLoading" style="display:none">
+        <div class="loader"><div class="spin"></div><div id="pairMsg">Establishing Baileys session…</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SCREEN 2 · ONE-TIME PIN ============ -->
+  <section class="screen" id="s-pin">
+    <div class="card">
+      <div class="eyebrow">Step 2 · Verification</div>
+      <h1 class="display" style="font-size:44px;margin-top:8px">One-Time Code</h1>
+      <p class="lead">Enter your AKT one-time access code to unlock bug deployment. Codes are issued by ZEUS — no code? DM the owner on WhatsApp.</p>
+
+      <div class="field">
+        <label>AKT One-Time Code</label>
+        <input id="pinInput" class="pin-input" type="password" maxlength="6" placeholder="• • • • • •" autocomplete="off" spellcheck="false" inputmode="numeric"/>
+      </div>
+      <div class="err" id="pinErr"></div>
+
+      <button class="btn" onclick="verifyPin()">Unlock Access</button>
+      <a class="wa-me" style="display:flex;justify-content:center;margin-top:14px" target="_blank" rel="noopener" href="https://wa.me/2349066760078?text=Hi%20ZEUS%2C%20I%20need%20an%20AKT%20one-time%20pairing%20code">
+        <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15s-.77.97-.94 1.17-.37.22-.67.07c-1.74-.86-2.88-1.54-4.02-3.48-.3-.52.3-.49.85-1.62.15-.3.08-.55-.04-.77-.12-.22-.97-1.86-1.33-2.54-.36-.66-.72-.57-.97-.58h-.83c-.3 0-.77.1-1.17.55-.4.45-1.52 1.51-1.52 3.68s1.55 4.3 1.76 4.6c.21.3 2.99 4.59 7.26 6.44 1.08.45 1.92.72 2.57.92.55.18 1.4.15 1.83.09.48-.07 1.48-.6 1.68-1.18.21-.58.21-1.07.15-1.18-.06-.1-.26-.16-.56-.31Z"/></svg>
+        No code? DM owner on WhatsApp
+      </a>
+    </div>
+  </section>
+
+  <!-- ============ SCREEN 3 · COUNTRY + NUMBER ============ -->
+  <section class="screen" id="s-phone">
+    <div class="card">
+      <div class="eyebrow">Step 3 · Register Number</div>
+      <h1 class="display" style="font-size:44px;margin-top:8px">Your WhatsApp Number</h1>
+      <p class="lead">Pick your country code and enter your mobile number. We'll generate your 8-digit WhatsApp activation code.</p>
+
+      <div class="row" style="margin-top:6px">
+        <div class="tel">
+          <div class="cc"><select id="countryCode" onchange="updatePlaceholder()"></select></div>
+          <div class="num"><input id="phoneNum" type="tel" placeholder="906 000 0000" inputmode="tel" autocomplete="off"/></div>
+        </div>
+      </div>
+      <div class="err" id="phoneErr"></div>
+
+      <button class="btn" onclick="generateActivation()">Generate 8-Digit WA Code</button>
+    </div>
+  </section>
+
+  <!-- ============ SCREEN 4 · 8 DIGIT CODE ============ -->
+  <section class="screen" id="s-code">
+    <div class="card" style="text-align:center">
+      <div class="eyebrow">Step 4 · Activation</div>
+      <h1 class="display" style="font-size:40px;margin-top:8px">Your WA Code</h1>
+      <p class="lead">Send this 8-digit code to the AKT bot on WhatsApp. Then tap <b>.menu</b> to open the bug menu.</p>
+
+      <div class="big-code" id="bigCode">0000 0000</div>
+      <div class="code-label">Copy &amp; send to the bot</div>
+
+      <div class="hint">
+        <b>How to activate:</b>
+        1. Send <b>your number</b> to the bot first.<br/>
+        2. Paste this <b>8-digit code</b>.<br/>
+        3. Send <b>.menu</b> — the AKT bug menu pops up instantly.
+      </div>
+
+      <div class="row" style="margin-top:18px">
+        <button class="btn ghost" onclick="copyCode()">Copy Code</button>
+        <button class="btn" onclick="openMenu()">Open .menu Now</button>
+      </div>
+      <div class="row">
+        <button class="btn ghost" onclick="regenerateCode()">↻ New Code</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ============ BOT MENU OVERLAY ============ -->
+<div class="menu-backdrop" id="menuOverlay" onclick="if(event.target===this)closeMenu()">
+  <div class="menu-sheet">
+    <div class="grab"></div>
+    <div class="menu-head">
+      <div class="t">AKT BUG BOT · <span style="color:var(--gold)">MENU</span></div>
+      <button class="close-x" onclick="closeMenu()">✕</button>
+    </div>
+
+    <div class="tab-row">
+      <div class="tab active" onclick="tab(this,'android')">🤖 Android</div>
+      <div class="tab" onclick="tab(this,'ios')"> iOS</div>
+      <div class="tab" onclick="tab(this,'group')">👥 Group</div>
+    </div>
+
+    <div id="tab-android">
+      <div class="cmd"><div><div class="name">.aktcrash</div><div class="desc">Fire a silent hard-crash on the target Android phone.</div></div><div class="tag">Soft/Hard</div></div>
+      <div class="cmd"><div><div class="name">.glitch &lt;id&gt;</div><div class="desc">Screen-glitch / visual artifact payload (invisible log).</div></div><div class="tag">Glitch</div></div>
+      <div class="cmd"><div><div class="name">.freeze</div><div class="desc">Freeze the device UI until unfreeze.</div></div><div class="tag">Stall</div></div>
+      <div class="cmd"><div><div class="name">.reboot</div><div class="desc">Trigger soft-reboot cycle on target.</div></div><div class="tag">Reboot</div></div>
+      <div class="cmd"><div><div class="name">.sound &lt;on/off&gt;</div><div class="desc">Toggle silent sound loop (buzz) attack.</div></div><div class="tag">Audio</div></div>
+    </div>
+
+    <div id="tab-ios" style="display:none">
+      <div class="cmd"><div><div class="name">.ioscrash</div><div class="desc">Launch iOS hard-freeze exploit via media stream.</div></div><div class="tag">Freeze</div></div>
+      <div class="cmd"><div><div class="name">.iosreboot</div><div class="desc">Force restart on iPhone target.</div></div><div class="tag">Reboot</div></div>
+      <div class="cmd"><div><div class="name">.darkmode</div><div class="desc">Flash-screen flicker loop (strobe bug).</div></div><div class="tag">Flicker</div></div>
+      <div class="cmd"><div><div class="name">.battery &lt;on&gt;</div><div class="desc">Background battery-drain payload (invisible).</div></div><div class="tag">Drain</div></div>
+    </div>
+
+    <div id="tab-group" style="display:none">
+      <div class="cmd"><div><div class="name">.gblast &lt;soft|hard&gt;</div><div class="desc">Blast every group member with a crash payload.</div></div><div class="tag">Group</div></div>
+      <div class="cmd"><div><div class="name">.gflicker</div><div class="desc">Group-wide screen-flicker loop.</div></div><div class="tag">Group</div></div>
+      <div class="cmd"><div><div class="name">.gbuzz</div><div class="desc">Silent buzz attack on all members.</div></div><div class="tag">Group</div></div>
+      <div class="cmd"><div><div class="name">.gstatus</div><div class="desc">List active targets in this group.</div></div><div class="tag">Utility</div></div>
+      <div class="cmd"><div><div class="name">.gunpair &lt;number&gt;</div><div class="desc">Remove a paired number from the group.</div></div><div class="tag">Admin</div></div>
+    </div>
+
+    <div class="row" style="margin-top:14px">
+      <button class="btn ghost" onclick="toast('Command queued — waiting for WA reply')">Send to Bot</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   AKT CLAN BUG WEB · single-file build
+   Owner: ZEUS (CLAN DEV)
+   WA owner: +234 906 676 0078
+   ========================================================= */
+
+const OWNER_WA = "2349066760078";
+const WA_LINK  = `https://wa.me/${OWNER_WA}?text=` + encodeURIComponent("Hello ZEUS, I'm here for an AKT Clan bug pairing code.");
+
+/* ------------------------------------------------------------
+   ONE-TIME PIN CODES (mirror these in pins.js on your GitHub)
+   ------------------------------------------------------------ */
+const PINS = [
+  "849201","733198","650214","918337","524091","770563",
+  "389410","601982","847256","958301","420678","661843",
+  "175930","902618","538247","760481","319075","482916",
+  "955173","268430","813956","697214","540839","712506",
+  "396284","805147","623790","148563","977021","506834",
+  "419270","684391","827560","350148","942607","731849",
+  "208354","657920","489013"
+]; // 40 codes (35+)
+
+/* Hero image — replace with your edited AKT banner, or paste your CDN / GitHub raw URL */
+document.getElementById('heroImg').src = "https://picsum.photos/seed/aktclanbugzeus/900/560?grayscale";
+
+/* ---------------- Screen routing ---------------- */
+function go(id, step){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  const el=document.getElementById(id); el.classList.add('active');
+  document.getElementById('stepper').querySelectorAll('.step').forEach((s,i)=>s.classList.toggle('on', i<=step));
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ---------------- Toast ---------------- */
+let toastTimer;
+function toast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2600);
+}
+
+/* ================= PAIRING (Baileys-style simulation) ==== */
+const pairSteps=[
+  "Establishing Baileys session…",
+  "Handshake: WA Web 2.30.4 … OK",
+  "Fingerprint verified ✔",
+  "Syncing QR token …",
+  "Channel locked — ready for PIN",
+];
+let pairInterval=null;
+
+function startPairing(){
+  const val=document.getElementById('pairInput').value.trim();
+  if(!val){ toast("Paste a pairing string first"); return; }
+  document.getElementById('pairView').style.display='none';
+  document.getElementById('pairLoading').style.display='block';
+  let i=0;
+  const msg=document.getElementById('pairMsg');
+  msg.textContent=pairSteps[0];
+  pairInterval=setInterval(()=>{
+    i++;
+    if(i>=pairSteps.length){ clearInterval(pairInterval); setTimeout(()=>go('s-pin',2),500); return; }
+    msg.textContent=pairSteps[i];
+  },650);
+}
+function simulatePair(){ startPairing(); document.getElementById('pairInput').value="AKT-PAIR-"+Math.random().toString(36).slice(2,8).toUpperCase(); }
+
+/* ================= PIN ================= */
+function verifyPin(){
+  const val=document.getElementById('pinInput').value.trim().toUpperCase();
+  const err=document.getElementById('pinErr');
+  if(PINS.includes(val)){ err.textContent=""; go('s-phone',3); toast("Access granted — register number"); }
+  else{ err.textContent="Invalid one-time code. DM ZEUS on WhatsApp for a fresh code."; toast("Wrong PIN"); }
+}
+document.getElementById('pinInput').addEventListener('keydown',e=>{ if(e.key==='Enter') verifyPin(); });
+
+/* ================= COUNTRY CODES ================= */
+const COUNTRIES = [
+  ["NG","+234","🇳🇬"],["US","+1","🇺🇸"],["CA","+1","🇨🇦"],["GB","+44","🇬🇧"],
+  ["AU","+61","🇦🇺"],["DE","+49","🇩🇪"],["FR","+33","🇫🇷"],["ES","+34","🇪🇸"],
+  ["IT","+39","🇮🇹"],["NL","+31","🇳🇱"],["BE","+32","🇧🇪"],["CH","+41","🇨🇭"],
+  ["AT","+43","🇦🇹"],["SE","+46","🇸🇪"],["NO","+47","🇳🇴"],["FI","+358","🇫🇮"],
+  ["DK","+45","🇩🇰"],["IE","+353","🇮🇪"],["PT","+351","🇵🇹"],["GR","+30","🇬🇷"],
+  ["PL","+48","🇵🇱"],["RO","+40","🇷🇴"],["HU","+36","🇭🇺"],["CZ","+420","🇨🇿"],
+  ["TR","+90","🇹🇷"],["IN","+91","🇮🇳"],["PK","+92","🇵🇰"],["BD","+880","🇧🇩"],
+  ["ID","+62","🇮🇩"],["MY","+60","🇲🇾"],["SG","+65","🇸🇬"],["TH","+66","🇹🇭"],
+  ["VN","+84","🇻🇳"],["PH","+63","🇵🇭"],["JP","+81","🇯🇵"],["KR","+82","🇰🇷"],
+  ["CN","+86","🇨🇳"],["AE","+971","🇦🇪"],["SA","+966","🇸🇦"],["QA","+974","🇶🇦"],
+  ["KW","+965","🇰🇼"],["BH","+973","🇧🇭"],["OM","+968","🇴🇲"],["EG","+20","🇪🇬"],
+  ["MA","+212","🇲🇦"],["TZ","+255","🇹🇿"],["KE","+254","🇰🇪"],["ZA","+27","🇿🇦"],
+  ["GH","+233","🇬🇭"],["CI","+225","🇨🇮"],["SN","+221","🇸🇳"],["RS","+381","🇷🇸"],
+  ["BR","+55","🇧🇷"],["AR","+54","🇦🇷"],["MX","+52","🇲🇽"],["CO","+57","🇨🇴"],
+  ["CL","+56","🇨🇱"],["PE","+51","🇵🇪"],["NZ","+64","🇳🇿"],["ZA2","+27","🇿🇦"]
+];
+(function initCountries(){
+  const sel=document.getElementById('countryCode');
+  COUNTRIES.forEach(([name,code,flag],i)=>{
+    const o=document.createElement('option');
+    o.value=code; o.textContent=`${flag} ${name} (${code})`;
+    sel.appendChild(o);
+    if(name==="NG") o.selected=true;       // default to Nigeria
+  });
+})();
+function updatePlaceholder(){
+  document.getElementById('phoneNum').placeholder="YOUR NUMBER…";
+}
+
+/* ================= 8-DIGIT WA CODE ================= */
+let activeCode="";
+function generateActivation(){
+  const num=document.getElementById('phoneNum').value.replace(/\D/g,'');
+  const err=document.getElementById('phoneErr');
+  if(num.length<7){ err.textContent="Enter a valid mobile number."; return; }
+  err.textContent="";
+  activeCode=String(Math.floor(10000000+Math.random()*89999999));
+  document.getElementById('bigCode').textContent=activeCode.slice(0,4)+" "+activeCode.slice(4);
+  go('s-code',4);
+  toast("Activation code generated");
+}
+function copyCode(){
+  const c=activeCode.replace(/\s/g,'');
+  navigator.clipboard?.writeText(c).then(()=>toast("Code copied — paste into the bot")).catch(()=>toast(c));
+}
+function regenerateCode(){ activeCode=""; generateActivation(); }
+
+/* ================= MENU ================= */
+function openMenu(){ document.getElementById('menuOverlay').classList.add('open'); }
+function closeMenu(){ document.getElementById('menuOverlay').classList.remove('open'); }
+function tab(el,name){
+  document.querySelectorAll('.tab-row .tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  ['android','ios','group'].forEach(n=>document.getElementById('tab-'+n).style.display = n===name?'block':'none');
+}
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeMenu(); });
+</script>
+</body>
+</html>
